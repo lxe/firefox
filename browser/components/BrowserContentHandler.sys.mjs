@@ -97,6 +97,7 @@ function resolveURIInternal(aCmdLine, aArgument) {
 }
 
 let gKiosk = false;
+let gSSB = false;
 let gMajorUpgrade = false;
 let gFirstRunProfile = false;
 var gFirstWindow = false;
@@ -360,6 +361,7 @@ function openBrowserWindow(
     args,
     features: gBrowserContentHandler.getFeatures(cmdLine),
     private: forcePrivate,
+    all: !gSSB,
   });
 }
 
@@ -450,6 +452,16 @@ nsBrowserContentHandler.prototype = {
     ) {
       gKiosk = true;
       Glean.browserStartup.kioskMode.set(true);
+    }
+    
+    var ssbParam = cmdLine.handleFlagWithParam("ssb", false);
+    if (ssbParam) {
+      gSSB = true;
+      let { uri, principal } = resolveURIInternal(cmdLine, ssbParam);
+      if (shouldLoadURI(uri)) {
+        openBrowserWindow(cmdLine, principal, uri.spec);
+        cmdLine.preventDefault = true;
+      }
     }
     if (cmdLine.handleFlag("disable-pinch", false)) {
       let defaults = Services.prefs.getDefaultBranch(null);
@@ -685,6 +697,7 @@ nsBrowserContentHandler.prototype = {
     info += "  --kiosk            Start the browser in kiosk mode.\n";
     info +=
       "  --kiosk-monitor <num> Place kiosk browser window on given monitor.\n";
+    info += "  --ssb <url>        Open <url> in site-specific browser mode.\n";
     info +=
       "  --disable-pinch    Disable touch-screen and touch-pad pinch gestures.\n";
     return info;
@@ -1086,6 +1099,10 @@ nsBrowserContentHandler.prototype = {
       ) {
         this.mFeatures += ",suppressanimation";
       }
+      
+      if (gSSB) {
+        this.mFeatures += ",ssb";
+      }
     }
 
     return this.mFeatures;
@@ -1093,6 +1110,10 @@ nsBrowserContentHandler.prototype = {
 
   get kiosk() {
     return gKiosk;
+  },
+
+  get ssb() {
+    return gSSB;
   },
 
   get majorUpgrade() {

@@ -525,6 +525,25 @@ var gBrowserInit = {
       }
     }
 
+    if (BrowserHandler.ssb) {
+      // Hide chrome elements for SSB mode
+      gNavToolbox.hidden = true;
+      gBrowser.tabContainer.hidden = true;
+      
+      // Disable adding new tabs
+      gBrowser.tabContainer.setAttribute("closebuttons", "noclose");
+      gBrowser.tabContainer.setAttribute("overflow", "false");
+      
+      // Hide sidebar
+      let sidebar = document.getElementById("sidebar-box");
+      if (sidebar) {
+        sidebar.hidden = true;
+      }
+      
+      // Make URL bar read-only
+      gURLBar.readOnly = true;
+    }
+
     if (Services.policies.status === Services.policies.ACTIVE) {
       if (!Services.policies.isAllowed("hideShowMenuBar")) {
         document
